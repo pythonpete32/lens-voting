@@ -1,0 +1,20 @@
+{
+  "name": "lens-voting",
+  "version": "0.1.0",
+  "description": "Lens voting plugin for Aragon V2 DAOs",
+  "repository": "https://github.com/pythonpete32/lens-voting",
+  "author": "PythonPete32",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-dev.23",
+    "solhint": "^3.3.7"
+  },
+  "scripts": {
+    "lint:check": "yarn lint:check:format && yarn lint:check:solhint",
+    "lint:check:format": "prettier --check **/*.sol",
+    "lint:check:solhint": "solhint src/**/*.sol",
+    "lint:fix": "prettier --write **/*.sol"
+  }
+}
