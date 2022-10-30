@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.10;
 
-import { IFollowNFT } from "./interface/IFollowNFT.sol";
+import { FollowNFT } from "@lens/core/FollowNFT.sol";
 import { MajorityVotingBase } from "@aragon/voting/majority/MajorityVotingBase.sol";
 import { IDAO } from "@aragon/core/IDAO.sol";
 import { IMajorityVoting } from "@aragon/voting/majority/IMajorityVoting.sol";
@@ -16,7 +16,7 @@ contract LensVoting is MajorityVotingBase {
         this.getVotingToken.selector ^ this.initialize.selector;
 
     /// @notice An [FollowNFT](https://docs.lens.xyz/docs/built-in-governance) compatible contract referencing the token being used for voting.
-    IFollowNFT private votingToken;
+    FollowNFT private votingToken;
 
     /// @notice Thrown if the voting power is zero
     error NoVotingPower();
@@ -33,7 +33,7 @@ contract LensVoting is MajorityVotingBase {
         uint64 _participationRequiredPct,
         uint64 _supportRequiredPct,
         uint64 _minDuration,
-        IFollowNFT _token
+        FollowNFT _token
     ) public initializer {
         __MajorityVotingBase_init(
             _dao,
@@ -54,8 +54,8 @@ contract LensVoting is MajorityVotingBase {
 
     /// @notice getter function for the voting token.
     /// @dev public function also useful for registering interfaceId and for distinguishing from majority voting interface.
-    /// @return IFollowNFT the token used for voting.
-    function getVotingToken() public view returns (IFollowNFT) {
+    /// @return FollowNFT the token used for voting.
+    function getVotingToken() public view returns (FollowNFT) {
         return votingToken;
     }
 
@@ -112,10 +112,12 @@ contract LensVoting is MajorityVotingBase {
     }
 
     /// @inheritdoc MajorityVotingBase
-    function _vote(uint256 _voteId, VoteOption _choice, address _voter, bool _executesIfDecided)
-        internal
-        override
-    {
+    function _vote(
+        uint256 _voteId,
+        VoteOption _choice,
+        address _voter,
+        bool _executesIfDecided
+    ) internal override {
         Vote storage vote_ = votes[_voteId];
 
         // This could re-enter, though we can assume the governance token is not malicious

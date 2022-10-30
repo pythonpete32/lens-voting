@@ -11,7 +11,7 @@ import { DAO } from "@aragon/core/DAO.sol";
 import { PermissionLib } from "@aragon/core/permission/PermissionLib.sol";
 import { PluginSetup, IPluginSetup } from "@aragon/plugin/PluginSetup.sol";
 
-import { IFollowNFT } from "./interface/IFollowNFT.sol";
+import { FollowNFT } from "@lens/core/FollowNFT.sol";
 import { LensVoting } from "./LensVoting.sol";
 
 /// @title LensVotingSetup
@@ -37,7 +37,7 @@ contract LensVotingSetup is PluginSetup {
     /// @param token The token address
     error TokenNotContract(address token);
 
-    /// @notice Thrown if token address is not IFollowNFT.
+    /// @notice Thrown if token address is not FollowNFT.
     /// @param token The token address
     error TokenNotIFollow(address token);
 
@@ -188,7 +188,7 @@ contract LensVotingSetup is PluginSetup {
     /// @param token address
     function _isFollowNFT(address token) private view returns (bool) {
         (bool success, ) = token.staticcall(
-            abi.encodeWithSelector(IFollowNFT.getPowerByBlockNumber.selector, address(this))
+            abi.encodeWithSelector(FollowNFT.getPowerByBlockNumber.selector, address(this))
         );
         return success;
     }
