@@ -3,7 +3,6 @@ pragma solidity 0.8.10;
 import { DSTestPlus } from "solmate/src/test/utils/DSTestPlus.sol";
 import { DAOMock } from "./mocks/DAOMock.sol";
 import { LensVoting } from "../src/LensVoting.sol";
-import { IFollowNFT } from "../src/interface/IFollowNFT.sol";
 import { MockFollow } from "./mocks/MockFollow.sol";
 
 contract LensVotingTest is DSTestPlus {
@@ -17,14 +16,18 @@ contract LensVotingTest is DSTestPlus {
     LensVoting lensVoting;
     MockFollow followNFT;
 
-    function setup() public {
-        // 1. deploy contracts
+    function setUp() public {
         dao = new DAOMock(admin);
         lensVoting = new LensVoting();
-        followNFT = new MockFollow(admin);
+        followNFT = new MockFollow();
     }
 
     function testInitialize() public {
+        lensVoting.initialize(dao, 50e16, 5e16, 180, followNFT);
+    }
+
+    function testFailInitializeTwice() public {
+        lensVoting.initialize(dao, 50e16, 5e16, 180, followNFT);
         lensVoting.initialize(dao, 50e16, 5e16, 180, followNFT);
     }
 }
