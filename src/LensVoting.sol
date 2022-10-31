@@ -2,20 +2,22 @@
 
 pragma solidity 0.8.10;
 
-import { IFollowNFT } from "./interface/IFollowNFT.sol";
-import { MajorityVotingBase } from "@aragon/voting/majority/MajorityVotingBase.sol";
+import { IFollowNFT } from "@lens/interfaces/IFollowNFT.sol";
 import { IDAO } from "@aragon/core/IDAO.sol";
-import { IMajorityVoting } from "@aragon/voting/majority/IMajorityVoting.sol";
+
+import { LensVotingBase } from "./LensVotingBase.sol";
+import { ILensVoting } from "./interface/ILensVoting.sol";
+import { Vote, VoteOption } from "./lib/Structs.sol";
 
 /// @title LensVoting
 /// @notice The majority voting implementation using an Lens Follow NFT token.
-/// @dev This contract inherits from `MajorityVotingBase` and implements the `IMajorityVoting` interface.
-contract LensVoting is MajorityVotingBase {
+/// @dev This contract inherits from `LensVotingBase` and implements the `ILensVoting` interface.
+contract LensVoting is LensVotingBase {
     /// @notice The [ERC-165](https://eips.ethereum.org/EIPS/eip-165) interface ID of the contract.
     bytes4 internal constant LENS_VOTING_INTERFACE_ID =
         this.getVotingToken.selector ^ this.initialize.selector;
 
-    /// @notice An [FollowNFT](https://docs.lens.xyz/docs/built-in-governance) compatible contract referencing the token being used for voting.
+    /// @notice An [IFollowNFT](https://docs.lens.xyz/docs/built-in-governance) compatible contract referencing the token being used for voting.
     IFollowNFT private votingToken;
 
     /// @notice Thrown if the voting power is zero
@@ -27,7 +29,7 @@ contract LensVoting is MajorityVotingBase {
     /// @param _participationRequiredPct The minimal required participation in percent.
     /// @param _supportRequiredPct The minimal required support in percent.
     /// @param _minDuration The minimal duration of a vote.
-    /// @param _token The [FollowNFT](https://docs.lens.xyz/docs/built-in-governance) token used for voting.
+    /// @param _token The [IFollowNFT](https://docs.lens.xyz/docs/built-in-governance) token used for voting.
     function initialize(
         IDAO _dao,
         uint64 _participationRequiredPct,
@@ -59,7 +61,7 @@ contract LensVoting is MajorityVotingBase {
         return votingToken;
     }
 
-    /// @inheritdoc IMajorityVoting
+    /// @inheritdoc ILensVoting
     function createVote(
         bytes calldata _proposalMetadata,
         IDAO.Action[] calldata _actions,
@@ -111,16 +113,18 @@ contract LensVoting is MajorityVotingBase {
         }
     }
 
-    /// @inheritdoc MajorityVotingBase
-    function _vote(uint256 _voteId, VoteOption _choice, address _voter, bool _executesIfDecided)
-        internal
-        override
-    {
+    /// @inheritdoc LensVotingBase
+    function _vote(
+        uint256 _voteId,
+        VoteOption _choice,
+        address _voter,
+        bool _executesIfDecided
+    ) internal override {
         Vote storage vote_ = votes[_voteId];
 
         // This could re-enter, though we can assume the governance token is not malicious
         uint256 voterStake = votingToken.getPowerByBlockNumber(_voter, vote_.snapshotBlock);
-        VoteOption state = vote_.voters[_voter];
+        VoteOption state = voters[_voteId][_voter];
 
         // If voter had previously voted, decrease count
         if (state == VoteOption.Yes) {
@@ -140,7 +144,7 @@ contract LensVoting is MajorityVotingBase {
             vote_.abstain = vote_.abstain + voterStake;
         }
 
-        vote_.voters[_voter] = _choice;
+        voters[_voteId][_voter] = _choice;
 
         emit VoteCast(_voteId, _voter, uint8(_choice), voterStake);
 
@@ -149,7 +153,7 @@ contract LensVoting is MajorityVotingBase {
         }
     }
 
-    /// @inheritdoc MajorityVotingBase
+    /// @inheritdoc LensVotingBase
     function _canVote(uint256 _voteId, address _voter) internal view override returns (bool) {
         Vote storage vote_ = votes[_voteId];
         return
