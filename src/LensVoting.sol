@@ -84,12 +84,7 @@ contract LensVoting is LensVotingBase {
         if (_endDate == 0) _endDate = _startDate + minDuration;
 
         if (_endDate - _startDate < minDuration || _startDate < currentTimestamp)
-            revert VoteTimesInvalid({
-                current: currentTimestamp,
-                start: _startDate,
-                end: _endDate,
-                minDuration: minDuration
-            });
+            revert VoteTimesInvalid();
 
         // Create the vote
         Vote storage vote_ = votes[voteId];
