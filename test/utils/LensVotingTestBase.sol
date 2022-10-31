@@ -21,6 +21,7 @@ contract LensVotingTestBase is DSTestPlus {
     uint64 minDuration = 1 days;
 
     // user addresses
+    address admin = hevm.addr(0xB055);
     address bob = hevm.addr(0xB0B);
     address alice = hevm.addr(0xA11CE);
     address zain = hevm.addr(0x541);

@@ -9,3 +9,7 @@ out/
 
 # Node
 node_modules/
+
+# Coverage
+coverage/
+lcov.info
