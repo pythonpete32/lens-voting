@@ -151,7 +151,7 @@ abstract contract LensVotingBase is
     }
 
     /// @inheritdoc ILensVoting
-    function canVote(uint256 _voteId, address _voter) public view returns (bool) {
+    function canVote(uint256 _voteId, address _voter) public returns (bool) {
         return _canVote(_voteId, _voter);
     }
 
@@ -190,7 +190,7 @@ abstract contract LensVotingBase is
     /// @param _voteId The ID of the vote.
     /// @param _voter the address of the voter to check.
     /// @return True if the given voter can participate a certain vote, false otherwise.
-    function _canVote(uint256 _voteId, address _voter) internal view virtual returns (bool);
+    function _canVote(uint256 _voteId, address _voter) internal virtual returns (bool);
 
     /// @notice Internal function to check if a vote can be executed. It assumes the queried vote exists.
     /// @param _voteId The ID of the vote.

@@ -154,7 +154,7 @@ contract LensVoting is LensVotingBase {
     }
 
     /// @inheritdoc LensVotingBase
-    function _canVote(uint256 _voteId, address _voter) internal view override returns (bool) {
+    function _canVote(uint256 _voteId, address _voter) internal override returns (bool) {
         Vote storage vote_ = votes[_voteId];
         return
             _isVoteOpen(vote_) &&

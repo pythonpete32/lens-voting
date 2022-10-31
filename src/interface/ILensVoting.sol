@@ -79,7 +79,7 @@ interface ILensVoting {
     /// @param _voteId the vote Id.
     /// @param _voter the address of the voter to check.
     /// @return bool Returns true if the voter is allowed to vote.
-    function canVote(uint256 _voteId, address _voter) external view returns (bool);
+    function canVote(uint256 _voteId, address _voter) external returns (bool);
 
     /// @notice Method to execute a vote if allowed to.
     /// @param _voteId The ID of the vote to execute.
