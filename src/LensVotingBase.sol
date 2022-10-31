@@ -47,34 +47,6 @@ abstract contract LensVotingBase is
     uint64 public minDuration;
     uint256 public votesLength;
 
-    /// @notice Thrown if the maximal possible support is exceeded.
-    /// @param limit The maximal value.
-    /// @param actual The actual value.
-    error VoteSupportExceeded(uint64 limit, uint64 actual);
-
-    /// @notice Thrown if the maximal possible participation is exceeded.
-    /// @param limit The maximal value.
-    /// @param actual The actual value.
-    error VoteParticipationExceeded(uint64 limit, uint64 actual);
-
-    /// @notice Thrown if the selected vote times are not allowed.
-    /// @param current The maximal value.
-    /// @param start The start date of the vote as a unix timestamp.
-    /// @param end The end date of the vote as a unix timestamp.
-    /// @param minDuration The minimal duration of the vote in seconds.
-    error VoteTimesInvalid(uint64 current, uint64 start, uint64 end, uint64 minDuration);
-
-    /// @notice Thrown if the selected vote duration is zero
-    error VoteDurationZero();
-
-    /// @notice Thrown if a voter is not allowed to cast a vote.
-    /// @param voteId The ID of the vote.
-    /// @param sender The address of the voter.
-    error VoteCastingForbidden(uint256 voteId, address sender);
-
-    /// @notice Thrown if the vote execution is forbidden
-    error VoteExecutionForbidden(uint256 voteId);
-
     /// @notice Initializes the component to be used by inheriting contracts.
     /// @dev This method is required to support [ERC-1822](https://eips.ethereum.org/EIPS/eip-1822).
     /// @param _dao The IDAO interface of the associated DAO.
@@ -135,13 +107,13 @@ abstract contract LensVotingBase is
         bool _executesIfDecided
     ) external {
         if (_choice != VoteOption.None && !_canVote(_voteId, _msgSender()))
-            revert VoteCastingForbidden(_voteId, _msgSender());
+            revert VoteCastingForbidden();
         _vote(_voteId, _choice, _msgSender(), _executesIfDecided);
     }
 
     /// @inheritdoc ILensVoting
     function execute(uint256 _voteId) public {
-        if (!_canExecute(_voteId)) revert VoteExecutionForbidden(_voteId);
+        if (!_canExecute(_voteId)) revert VoteExecutionForbidden();
         _execute(_voteId);
     }
 
@@ -163,6 +135,11 @@ abstract contract LensVotingBase is
     /// @inheritdoc ILensVoting
     function getVote(uint256 _voteId) public view returns (Vote memory vote_) {
         vote_ = votes[_voteId];
+    }
+
+    /// @inheritdoc ILensVoting
+    function isVoteOpen(uint256 _voteId) public view returns (bool) {
+        return _isVoteOpen(votes[_voteId]);
     }
 
     /// @notice Internal function to cast a vote. It assumes the queried vote exists.
@@ -267,14 +244,11 @@ abstract contract LensVotingBase is
         uint64 _minDuration
     ) internal virtual {
         if (_supportRequiredPct > PCT_BASE) {
-            revert VoteSupportExceeded({ limit: PCT_BASE, actual: _supportRequiredPct });
+            revert VoteSupportExceeded();
         }
 
         if (_participationRequiredPct > PCT_BASE) {
-            revert VoteParticipationExceeded({
-                limit: PCT_BASE,
-                actual: _participationRequiredPct
-            });
+            revert VoteParticipationExceeded();
         }
 
         if (_minDuration == 0) {

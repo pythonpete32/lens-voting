@@ -37,6 +37,24 @@ interface ILensVoting {
         uint64 minDuration
     );
 
+    /// @notice Thrown if the maximal possible support is exceeded.
+    error VoteSupportExceeded();
+
+    /// @notice Thrown if the maximal possible participation is exceeded.
+    error VoteParticipationExceeded();
+
+    /// @notice Thrown if the selected vote times are not allowed.
+    error VoteTimesInvalid();
+
+    /// @notice Thrown if the selected vote duration is zero
+    error VoteDurationZero();
+
+    /// @notice Thrown if a voter is not allowed to cast a vote.
+    error VoteCastingForbidden();
+
+    /// @notice Thrown if the vote execution is forbidden
+    error VoteExecutionForbidden();
+
     /// @notice Sets the vote configuration.
     /// @param _participationRequiredPct The required participation in percent.
     /// @param _supportRequiredPct The required support in percent.
@@ -98,4 +116,9 @@ interface ILensVoting {
     /// @param _voteId The ID of the vote.
     /// @return Vote The vote data.
     function getVote(uint256 _voteId) external view returns (Vote memory);
+
+    /// @notice Returns true if vote is open
+    /// @param _voteId The ID of the vote.
+    /// @return bool True if vote is open.
+    function isVoteOpen(uint256 _voteId) external view returns (bool);
 }
