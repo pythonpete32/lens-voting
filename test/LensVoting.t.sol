@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 import { LensVotingTestBase } from "./utils/LensVotingTestBase.sol";
-import { VoteOption, Vote } from "../src/lib/Structs.sol";
+import { Vote, VoteOption } from "../src/lib/Structs.sol";
+import { ILensVoting } from "../src/interface/ILensVoting.sol";
+import { LensVoting } from "../src/LensVoting.sol";
 
 contract LensVotingTest is LensVotingTestBase {
+    event VoteDirection(uint256 option);
+
     /* ====================================================================== //
                                     Initialize
     // ====================================================================== */
@@ -19,7 +23,7 @@ contract LensVotingTest is LensVotingTestBase {
     /* ====================================================================== //
                                     Vote Creation
     // ====================================================================== */
-    function testFailCannotCreateLessThanMinDuration() public {
+    function testCannotCreateLessThanMinDuration() public {
         setupVoting();
         delegateUser(alice);
 
@@ -27,7 +31,7 @@ contract LensVotingTest is LensVotingTestBase {
         uint64 end = start + (minDuration - 1);
 
         hevm.startPrank(alice);
-        // hevm.expectRevert(MajorityVotingBase.VoteTimesInvalid.selector)
+        hevm.expectRevert(ILensVoting.VoteTimesInvalid.selector);
         lensVoting.createVote("0x00", mockVote(), start, end, false, VoteOption.None);
         hevm.stopPrank();
     }
@@ -35,52 +39,193 @@ contract LensVotingTest is LensVotingTestBase {
     function testCreateButNotVote() public {
         setupVoting();
         delegateUser(alice);
-
-        // setup vote
-        // uint64 start = uint64(block.timestamp);
-        // uint64 end = start + minDuration;
-        hevm.startPrank(alice);
-        lensVoting.createVote(
-            "0x00",
-            mockVote(),
-            uint64(block.timestamp),
-            uint64(block.timestamp) + minDuration,
-            false,
-            VoteOption.None
-        );
-        hevm.stopPrank();
+        createMockVote(alice, VoteOption.None);
 
         // expect vote to be created
         assertEq(lensVoting.votesLength(), 1);
 
-        // compare the vote to expected values
         Vote memory vote = lensVoting.getVote(0);
+
+        assertTrue(lensVoting.isVoteOpen(0));
+        assertFalse(vote.executed);
+        assertEq(vote.supportRequiredPct, 50e16);
+        assertEq(vote.participationRequiredPct, 5e16);
+        assertEq(vote.snapshotBlock, block.number - 1);
+        assertEq(vote.votingPower, 1);
+        assertEq(vote.yes, 0);
+        assertEq(vote.no, 0);
+        assertEq(vote.abstain, 0);
+
+        assertEq(vote.startDate + minDuration, vote.endDate);
+        assertEq(vote.actions.length, 1);
+        assertEq(vote.actions[0].to, random);
+        assertEq(vote.actions[0].value, 0);
+        assertEq0(vote.actions[0].data, "0x00");
     }
 
-    function testCreateAndVote() public {}
+    function testCreateAndVote() public {
+        setupVoting();
+        delegateUser(alice);
+        delegateUser(bob);
+        delegateUser(zain);
+        createMockVote(alice, VoteOption.Yes);
+
+        // expect vote to be created
+        assertEq(lensVoting.votesLength(), 1);
+
+        Vote memory vote = lensVoting.getVote(0);
+
+        assertTrue(lensVoting.isVoteOpen(0));
+        assertFalse(vote.executed);
+        assertEq(vote.votingPower, 3);
+        assertEq(vote.yes, 1);
+        assertEq(vote.no, 0);
+        assertEq(vote.abstain, 0);
+    }
 
     /* ====================================================================== //
                                 Casting and execution
     // ====================================================================== */
     function testCannotVoteWithNoPower() public {
         setupVoting();
-        hevm.expectRevert(NoVotingPower());
+        hevm.expectRevert(LensVoting.NoVotingPower.selector);
         lensVoting.createVote("0x00", mockVote(), 0, 0, false, VoteOption.None);
     }
 
-    function testShouldIncreaseYesAndEmit() public {}
+    function testShouldIncreaseYesNoAbstainAnd() public {
+        setupVoting();
+        delegateUser(alice);
+        delegateUser(bob);
+        delegateUser(zain);
 
-    function testShouldIncreaseNoAndEmit() public {}
+        createMockVote(alice, VoteOption.Yes);
+        hevm.prank(bob);
+        lensVoting.vote(0, VoteOption.No, false);
+        hevm.prank(zain);
+        lensVoting.vote(0, VoteOption.Abstain, false);
 
-    function testShouldIncreaseAbstainAndEmit() public {}
+        Vote memory vote = lensVoting.getVote(0);
 
-    function testMultipleVotesShouldNotIncrease() public {}
+        assertTrue(lensVoting.isVoteOpen(0));
+        assertFalse(vote.executed);
+        assertEq(vote.votingPower, 3);
+        assertEq(vote.yes, 1);
+        assertEq(vote.no, 1);
+        assertEq(vote.abstain, 1);
+    }
 
-    function testShouldMakeExecutableIfThresholdReached() public {}
+    function testMultipleVotesShouldNotIncrease() public {
+        setupVoting();
+        delegateUser(alice);
+        delegateUser(bob);
+        delegateUser(zain);
 
-    function testShouldMakeNonExecutableIfThresholdNotReached() public {}
+        createMockVote(alice, VoteOption.Yes);
+        Vote memory vote = lensVoting.getVote(0);
+        assertEq(vote.yes, 1);
 
-    function testShouldExecuteImmediatelyIfFinalYes() public {}
+        hevm.prank(alice);
+        lensVoting.vote(0, VoteOption.Yes, false);
+        vote = lensVoting.getVote(0);
+        assertEq(vote.yes, 1);
 
-    function testShouldRevertIfExecutedBeforeThreshold() public {}
+        hevm.startPrank(bob);
+        assertEq(vote.no, 0);
+        lensVoting.vote(0, VoteOption.No, false);
+        vote = lensVoting.getVote(0);
+        assertEq(vote.no, 1);
+        lensVoting.vote(0, VoteOption.No, false);
+        vote = lensVoting.getVote(0);
+        assertEq(vote.no, 1);
+        hevm.stopPrank();
+
+        hevm.startPrank(zain);
+        assertEq(vote.abstain, 0);
+        lensVoting.vote(0, VoteOption.Abstain, false);
+        vote = lensVoting.getVote(0);
+        assertEq(vote.abstain, 1);
+        lensVoting.vote(0, VoteOption.Abstain, false);
+        vote = lensVoting.getVote(0);
+        assertEq(vote.abstain, 1);
+    }
+
+    function testShouldMakeExecutableIfThresholdReached() public {
+        setupVoting();
+        delegateUser(alice);
+        delegateUser(bob);
+        delegateUser(zain);
+
+        createMockVote(alice, VoteOption.Yes);
+        hevm.prank(bob);
+        lensVoting.vote(0, VoteOption.No, false);
+
+        Vote memory vote = lensVoting.getVote(0);
+
+        assertEq(vote.votingPower, 3);
+        assertEq(vote.yes, 1);
+        assertEq(vote.no, 1);
+
+        assertFalse(lensVoting.canExecute(0));
+
+        hevm.prank(zain);
+        lensVoting.vote(0, VoteOption.Yes, false);
+        assertTrue(lensVoting.canExecute(0));
+    }
+
+    function testShouldBeNonExecutableIfThresholdNotReached() public {
+        setupVoting();
+        delegateUser(alice);
+        delegateUser(bob);
+        delegateUser(zain);
+
+        createMockVote(alice, VoteOption.Yes);
+        hevm.prank(bob);
+        lensVoting.vote(0, VoteOption.No, false);
+
+        Vote memory vote = lensVoting.getVote(0);
+
+        assertEq(vote.votingPower, 3);
+        assertEq(vote.yes, 1);
+        assertEq(vote.no, 1);
+
+        assertFalse(lensVoting.canExecute(0));
+
+        hevm.prank(zain);
+        lensVoting.vote(0, VoteOption.Abstain, false);
+        assertFalse(lensVoting.canExecute(0));
+    }
+
+    function testShouldExecuteImmediatelyIfFinalYes() public {
+        setupVoting();
+        delegateUser(alice);
+        delegateUser(bob);
+        delegateUser(zain);
+
+        createMockVote(alice, VoteOption.Yes);
+
+        Vote memory vote = lensVoting.getVote(0);
+        assertTrue(lensVoting.isVoteOpen(0));
+        assertFalse(vote.executed);
+
+        hevm.prank(bob);
+        lensVoting.vote(0, VoteOption.Yes, true);
+
+        vote = lensVoting.getVote(0);
+
+        assertFalse(lensVoting.isVoteOpen(0));
+        assertTrue(vote.executed);
+    }
+
+    function testShouldRevertIfExecutedBeforeThreshold() public {
+        setupVoting();
+        delegateUser(alice);
+        delegateUser(bob);
+
+        createMockVote(alice, VoteOption.Yes);
+
+        hevm.startPrank(bob);
+        hevm.expectRevert(ILensVoting.VoteExecutionForbidden.selector);
+        lensVoting.execute(0);
+        hevm.stopPrank();
+    }
 }

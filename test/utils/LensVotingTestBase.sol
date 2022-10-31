@@ -6,8 +6,8 @@ import { LensVoting } from "../../src/LensVoting.sol";
 import { MockFollow } from "../mocks/MockFollow.sol";
 import { IFollowNFT } from "@lens/interfaces/IFollowNFT.sol";
 import { IDAO } from "@aragon/core/IDAO.sol";
-import { IMajorityVoting } from "@aragon/voting/majority/IMajorityVoting.sol";
-import { MajorityVotingBase } from "@aragon/voting/majority/MajorityVotingBase.sol";
+
+import { VoteOption } from "../../src/lib/Structs.sol";
 
 contract LensVotingTestBase is DSTestPlus {
     // contracts
@@ -16,12 +16,11 @@ contract LensVotingTestBase is DSTestPlus {
     MockFollow followNFT;
 
     // vote settings
-    uint64 participationRequiredPct = 50 * 10**16;
-    uint64 supportRequiredPct = 5 * 10**16;
+    uint64 supportRequiredPct = 50e16;
+    uint64 participationRequiredPct = 5e16;
     uint64 minDuration = 1 days;
 
     // user addresses
-    address admin = hevm.addr(0xB055);
     address bob = hevm.addr(0xB0B);
     address alice = hevm.addr(0xA11CE);
     address zain = hevm.addr(0x541);
@@ -31,10 +30,14 @@ contract LensVotingTestBase is DSTestPlus {
         dao = new DAOMock(admin);
         lensVoting = new LensVoting();
         followNFT = new MockFollow();
-        hevm.deal(admin, 1 ether);
         hevm.deal(alice, 100 ether);
         hevm.deal(bob, 100 ether);
         hevm.deal(zain, 100 ether);
+        hevm.label(admin, "admin");
+        hevm.label(bob, "bob");
+        hevm.label(alice, "alice");
+        hevm.label(zain, "zain");
+        hevm.label(random, "random");
     }
 
     // setup function
@@ -60,14 +63,21 @@ contract LensVotingTestBase is DSTestPlus {
     }
 
     // helper functions
-    function mockVote() public returns (IDAO.Action[] memory) {
+    function mockVote() public view returns (IDAO.Action[] memory) {
         IDAO.Action[] memory actions = new IDAO.Action[](1);
-        actions[0] = IDAO.Action({ to: address(0), value: 0, data: new bytes(0) });
+        actions[0] = IDAO.Action({ to: random, value: 0, data: "0x00" });
         return actions;
     }
 
-    // helper functions
-    function NoVotingPower() public pure returns (bytes4) {
-        return LensVoting.NoVotingPower.selector;
+    function createMockVote(address proposer, VoteOption option) public {
+        hevm.prank(proposer);
+        lensVoting.createVote(
+            "0x00",
+            mockVote(),
+            uint64(block.timestamp),
+            uint64(block.timestamp) + minDuration,
+            false,
+            option
+        );
     }
 }
