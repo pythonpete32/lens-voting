@@ -26,3 +26,7 @@ test  :;
 # Get coverage
 coverage  :; 
 	forge coverage 
+
+# Publish
+publish  :; 
+	forge script script/DeploySetup.s.sol:Setup --rpc-url ${MUMBAI_RPC_URL} --broadcast --verify  -vvvv
