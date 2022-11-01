@@ -12,6 +12,7 @@
     "solhint": "^3.3.7"
   },
   "scripts": {
+    "pluginrepo:create": "script/createPluginRepo.sh",
     "lint:check": "yarn lint:check:format && yarn lint:check:solhint",
     "lint:check:format": "prettier --check **/*.sol",
     "lint:check:solhint": "solhint src/**/*.sol",
