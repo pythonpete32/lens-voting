@@ -3,7 +3,7 @@
 pragma solidity 0.8.10;
 
 import { VoteOption } from "../lib/Structs.sol";
-import { Vote } from "../lib/Structs.sol";
+import { VoteView } from "../lib/Structs.sol";
 import { IDAO } from "@aragon/core/IDAO.sol";
 
 /// @title ILensVoting
@@ -114,8 +114,8 @@ interface ILensVoting {
 
     /// @notice Returns the vote data of a vote by its ID.
     /// @param _voteId The ID of the vote.
-    /// @return Vote The vote data.
-    function getVote(uint256 _voteId) external view returns (Vote memory);
+    /// @return VoteView The vote data.
+    function getVote(uint256 _voteId) external view returns (VoteView memory);
 
     /// @notice Returns true if vote is open
     /// @param _voteId The ID of the vote.

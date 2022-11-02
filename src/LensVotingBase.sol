@@ -14,7 +14,7 @@ import { TimeHelpers } from "@aragon/utils/TimeHelpers.sol";
 import { IDAO } from "@aragon/core/IDAO.sol";
 
 import { ILensVoting } from "./interface/ILensVoting.sol";
-import { Vote, VoteOption } from "./lib/Structs.sol";
+import { Vote, VoteView, VoteOption } from "./lib/Structs.sol";
 
 /// @title LensVotingBase
 /// @notice The abstract implementation of majority voting components.
@@ -133,8 +133,24 @@ abstract contract LensVotingBase is
     }
 
     /// @inheritdoc ILensVoting
-    function getVote(uint256 _voteId) public view returns (Vote memory vote_) {
-        vote_ = votes[_voteId];
+    function getVote(uint256 _voteId) public view returns (VoteView memory voteView) {
+        //
+        Vote memory vote_ = votes[_voteId];
+
+        voteView = VoteView(
+            _isVoteOpen(votes[_voteId]),
+            vote_.executed,
+            vote_.startDate,
+            vote_.endDate,
+            vote_.snapshotBlock,
+            vote_.supportRequiredPct,
+            vote_.participationRequiredPct,
+            vote_.votingPower,
+            vote_.yes,
+            vote_.no,
+            vote_.abstain,
+            vote_.actions
+        );
     }
 
     /// @inheritdoc ILensVoting
