@@ -23,3 +23,18 @@ struct Vote {
     uint256 votingPower;
     IDAO.Action[] actions;
 }
+
+struct VoteView {
+        bool open;
+        bool executed;
+        uint64 startDate;
+        uint64 endDate;
+        uint64 snapshotBlock;
+        uint64 supportRequired;
+        uint64 participationRequired;
+        uint256 votingPower;
+        uint256 yes;
+        uint256 no;
+        uint256 abstain;
+        IDAO.Action[] actions;
+}

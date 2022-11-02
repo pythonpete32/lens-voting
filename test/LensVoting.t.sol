@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 import { LensVotingTestBase } from "./utils/LensVotingTestBase.sol";
-import { Vote, VoteOption } from "../src/lib/Structs.sol";
+import { Vote, VoteView, VoteOption } from "../src/lib/Structs.sol";
 import { ILensVoting } from "../src/interface/ILensVoting.sol";
 import { LensVoting } from "../src/LensVoting.sol";
 
@@ -44,12 +44,12 @@ contract LensVotingTest is LensVotingTestBase {
         // expect vote to be created
         assertEq(lensVoting.votesLength(), 1);
 
-        Vote memory vote = lensVoting.getVote(0);
+        VoteView memory vote = lensVoting.getVote(0);
 
-        assertTrue(lensVoting.isVoteOpen(0));
+        assertTrue(vote.open);
         assertFalse(vote.executed);
-        assertEq(vote.supportRequiredPct, 50e16);
-        assertEq(vote.participationRequiredPct, 5e16);
+        assertEq(vote.supportRequired, 50e16);
+        assertEq(vote.participationRequired, 5e16);
         assertEq(vote.snapshotBlock, block.number - 1);
         assertEq(vote.votingPower, 1);
         assertEq(vote.yes, 0);
@@ -73,9 +73,9 @@ contract LensVotingTest is LensVotingTestBase {
         // expect vote to be created
         assertEq(lensVoting.votesLength(), 1);
 
-        Vote memory vote = lensVoting.getVote(0);
+        VoteView memory vote = lensVoting.getVote(0);
 
-        assertTrue(lensVoting.isVoteOpen(0));
+        assertTrue(vote.open);
         assertFalse(vote.executed);
         assertEq(vote.votingPower, 3);
         assertEq(vote.yes, 1);
@@ -104,9 +104,9 @@ contract LensVotingTest is LensVotingTestBase {
         hevm.prank(zain);
         lensVoting.vote(0, VoteOption.Abstain, false);
 
-        Vote memory vote = lensVoting.getVote(0);
+        VoteView memory vote = lensVoting.getVote(0);
 
-        assertTrue(lensVoting.isVoteOpen(0));
+        assertTrue(vote.open);
         assertFalse(vote.executed);
         assertEq(vote.votingPower, 3);
         assertEq(vote.yes, 1);
@@ -121,7 +121,7 @@ contract LensVotingTest is LensVotingTestBase {
         delegateUser(zain);
 
         createMockVote(alice, VoteOption.Yes);
-        Vote memory vote = lensVoting.getVote(0);
+        VoteView memory vote = lensVoting.getVote(0);
         assertEq(vote.yes, 1);
 
         hevm.prank(alice);
@@ -159,7 +159,7 @@ contract LensVotingTest is LensVotingTestBase {
         hevm.prank(bob);
         lensVoting.vote(0, VoteOption.No, false);
 
-        Vote memory vote = lensVoting.getVote(0);
+        VoteView memory vote = lensVoting.getVote(0);
 
         assertEq(vote.votingPower, 3);
         assertEq(vote.yes, 1);
@@ -182,7 +182,7 @@ contract LensVotingTest is LensVotingTestBase {
         hevm.prank(bob);
         lensVoting.vote(0, VoteOption.No, false);
 
-        Vote memory vote = lensVoting.getVote(0);
+        VoteView memory vote = lensVoting.getVote(0);
 
         assertEq(vote.votingPower, 3);
         assertEq(vote.yes, 1);
@@ -203,8 +203,8 @@ contract LensVotingTest is LensVotingTestBase {
 
         createMockVote(alice, VoteOption.Yes);
 
-        Vote memory vote = lensVoting.getVote(0);
-        assertTrue(lensVoting.isVoteOpen(0));
+        VoteView memory vote = lensVoting.getVote(0);
+        assertTrue(vote.open);
         assertFalse(vote.executed);
 
         hevm.prank(bob);
@@ -212,7 +212,7 @@ contract LensVotingTest is LensVotingTestBase {
 
         vote = lensVoting.getVote(0);
 
-        assertFalse(lensVoting.isVoteOpen(0));
+        assertFalse(vote.open);
         assertTrue(vote.executed);
     }
 
